@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Recipe Game</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .welcome-banner {
+            background: #4ecdc4;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 3px solid #4ecdc4;
+        }
+        .measurement-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            color: #333;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4ecdc4;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .ingredient {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .ingredient-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .ingredient-description {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        select, .quiz-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #4ecdc4;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #4ecdc4;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #recipe-output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .conversion-note {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid #4ecdc4;
+            font-size: 14px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="progress-bar" class="progress-bar"></div>
+        <div id="achievements"></div>
+
+        <div class="instructions">
+            <strong>Assessment Instructions:</strong>
+            <p>Your completion of Question 2 must be observed by your teacher. To complete this task you may:</p>
+            <ul>
+                <li>have your teacher observe you in the classroom</li>
+                <li>have your teacher observe you using your phone or Microsoft Teams</li>
+                <li>submit a video of yourself completing the task</li>
+            </ul>
+            <p><em>You may submit a series of photos demonstrating the completion of this activity if the above options are not suitable. Ensure all unit requirements are met.</em></p>
+        </div>
+
+        <div id="welcome-message" class="welcome-banner"></div>
+
+        <div class="measurement-toggle">
+            <span>Weight (g)</span>
+            <label class="switch">
+                <input type="checkbox" id="measurementToggle" onchange="updateMeasurements()">
+                <span class="slider"></span>
+            </label>
+            <span>Cups</span>
+        </div>
+
+        <div class="conversion-note">
+            <p><strong>Note:</strong> If you don't have scales, you can use cup measurements instead of weights.</p>
+        </div>
+
+        <div class="warning">
+            ⚠️ Do not eat raw ingredients. Wash hands before starting.
+        </div>
+
+        <div class="ingredient" data-ingredient="biscuits">
+            <div class="ingredient-name">1 packet plain biscuits</div>
+            <div class="ingredient-description">Creates the base of the slice. Needs to be crushed into fine crumbs.</div>
+            <select onchange="handleIngredientChange('biscuits', this.value)">
+                <option>👉 Click to choose alternative biscuits</option>
+                <option>Plain sweet biscuits</option>
+                <option>Digestive biscuits</option>
+                <option>Graham crackers</option>
+            </select>
+        </div>
+
+        <div class="ingredient" data-ingredient="coconut">
+            <div class="ingredient-name">180g coconut</div>
+            <div class="ingredient-description">Adds texture to the slice.</div>
+            <select onchange="handleIngredientChange('coconut', this.value)">
+                <option>👉 Click to choose alternative coconut</option>
+                <option>Rice bubbles/Rice Krispies</option>
+                <option>Crushed cornflakes</option>
+                <option>Chopped nuts (if allergies aren't a concern)</option>
+                <option>Rolled oats</option>
+                <option>Puffed rice</option>
+                <option>Crushed wheat biscuits (like Weetbix)</option>
+            </select>
+        </div>
+
+        <div class="ingredient" data-ingredient="cocoa">
+            <div class="ingredient-name">1/4 cup cocoa</div>
+            <div class="ingredient-description">Gives the chocolate flavor and dark color to the slice.</div>
+            <select onchange="handleIngredientChange('cocoa', this.value)">
+                <option>👉 Click to choose alternative cocoa</option>
+                <option>Drinking chocolate</option>
+                <option>Carob powder</option>
+                <option>Chocolate milk powder</option>
+            </select>
+        </div>
+
+        <div class="ingredient" data-ingredient="condensed_milk">
+            <div class="ingredient-name">175 mL condensed milk</div>
+            <div class="ingredient-description">Sweetens the slice and helps bind ingredients together. (Approximately 1 can)</div>
+            <select onchange="handleIngredientChange('condensed_milk', this.value)">
+                <option>👉 Click to choose alternative milk</option>
+                <option>Honey + milk powder</option>
+                <option>Caramel sauce</option>
+            </select>
+        </div>
+
+        <div class="ingredient" data-ingredient="olive_oil">
+            <div class="ingredient-name">50 mL olive oil</div>
+            <div class="ingredient-description">Adds moisture and flavor to the slice.</div>
+            <select onchange="handleIngredientChange('olive_oil', this.value)">
+                <option>👉 Click to choose alternative oil</option>
+                <option>Margarine</option>
+                <option>Butter</option>
+                <option>Vegetable oil</option>
+                <option>Canola oil</option>
+            </select>
+        </div>
+
+        <button onclick="updateIngredients()">UPDATE INGREDIENTS</button>
+
+        <div id="recipe-output"></div>
+
+        <button onclick="window.print()">PRINT RECIPE</button>
+    </div>
+
+    <script>
+        const gameState = {
+            score: 0,
+            choices: new Map(),
+            achievements: new Set(),
+            level: 1
+        };
+
+        const measurements = {
+            'biscuits': { weight: '250g', cups: '2.5 cups crushed' },
+            'coconut': { weight: '180g', cups: '1 cup' },
+            'cocoa': { weight: '2 tbsp', cups: '1/4 cup' },
+            'condensed_milk': { weight: '175mL', cups: '7.5 cups' }, // 175 mL ≈ 7.5 cups
+            'olive_oil': { weight: '50mL', cups: '2 cups' } // 50 mL ≈ 2 cups
+        };
+
+        const achievements = [
+            {
+                id: 'first_change',
+                title: 'Kitchen Innovator',
+                description: 'Made your first ingredient substitution!',
+                condition: state => state.choices.size >= 1
+            },
+            {
+                id: 'measurement_master',
+                title: 'Measurement Master',
+                description: 'Successfully converted 3 measurements!',
+                condition: state => state.score >= 30
+            }
+        ];
+
+        window.onload = function() {
+            const playerName = prompt("Welcome! What's your name?", "");
+            if (playerName) {
+                document.getElementById('welcome-message').innerHTML = 
+                    `👋 Hello ${playerName}! Let's make something delicious!`;
+            }
+        }
+
+        function updateMeasurements() {
+            const useCups = document.getElementById('measurementToggle').checked;
+            
+            document.querySelectorAll('.ingredient-name').forEach(elem => {
+                const ingredientName = elem.textContent.trim().toLowerCase().replace(/ /g, '_');
+                if (measurements[ingredientName]) {
+                    elem.textContent = `${ingredientName.replace(/_/g, ' ')}: ${useCups ? 
+                        measurements[ingredientName].cups : 
+                        measurements[ingredientName].weight}`;
+                }
+            });
+        }
+
+        function handleIngredientChange(ingredient, alternative) {
+            gameState.choices.set(ingredient, alternative);
+            console.log(`Ingredient: ${ingredient}, Alternative: ${alternative}`);
+            checkAchievements();
+            updateProgress();
+        }
+
+        function checkAchievements() {
+            achievements.forEach(achievement => {
+                if (!gameState.achievements.has(achievement.id) && 
+                    achievement.condition(gameState)) {
+                    awardAchievement(achievement);
+                }
+            });
+        }
+
+        function awardAchievement(achievement) {
+            gameState.achievements.add(achievement.id);
+            showAchievementPopup(achievement);
+        }
+
+        function showAchievementPopup(achievement) {
+            const popup = document.createElement('div');
+            popup.className = 'achievement-popup';
+            popup.innerHTML = `🏆 ${achievement.title}: ${achievement.description}`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 3000);
+        }
+
+        function updateProgress() {
+            const progress = (gameState.choices.size / 5) * 100;
+            document.getElementById('progress-bar').style.setProperty('--progress', `${progress}%`);
+        }
+
+        function updateIngredients() {
+            let html = '<h3>Your Recipe:</h3><ul>';
+            const useCups = document.getElementById('measurementToggle').checked;
+
+            document.querySelectorAll('.ingredient').forEach(ing => {
+                const ingredientName = ing.getAttribute('data-ingredient');
+                const name = ing.querySelector('.ingredient-name').textContent.split(':')[0].trim();
+                const select = ing.querySelector('select');
+                
+                if (select.selectedIndex > 0) {
+                    const measurement = useCups ? measurements[ingredientName].cups : measurements[ingredientName].weight;
+                    html += `<li>${name}: ${measurement} (Using: ${select.options[select.selectedIndex].text})</li>`;
+                } else {
+                    const measurement = useCups ? measurements[ingredientName].cups : measurements[ingredientName].weight;
+                    html += `<li>${name}: ${measurement}</li>`;
+                }
+            });
+
+            html += '</ul>';
+            document.getElementById('recipe-output').innerHTML = html;
+            console.log('Recipe Output:', html);
+        }
+
+        function roundToHalf(value) {
+            return Math.round(value * 2) / 2;
+        }
+    </script>
+</body>
+</html>
